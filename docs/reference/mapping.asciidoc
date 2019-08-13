@@ -122,32 +122,24 @@ You can create field mappings when you
 <<indices-create-index,create an index>>, and you can add
 fields to an existing index with the <<indices-put-mapping,PUT mapping API>>.
 
-[float]
-== Updating existing field mappings
-
-Other than where documented, *existing field mappings cannot be
-updated*. Changing the mapping would mean invalidating already indexed
-documents. Instead, you should create a new index with the correct mappings
-and <<docs-reindex,reindex>> your data into that index. If you only wish
-to rename a field and not change its mappings, it may make sense to introduce
-an <<alias, `alias`>> field.
 
 [float]
-== Example mapping
+[[create-mapping]]
+== Create an index with an explicit mapping
 
-A mapping can be specified when creating an index, as follows:
+You can use the `mappings` parameter to include an explicit mapping when you create a new index with the <<indices-create-index,create index>> API.
 
 [source,js]
 ---------------------------------------
-PUT my_index <1>
+PUT my-index
 {
   "mappings": {
-    "properties": { <2>
-      "title":    { "type": "text"  }, <3>
-      "name":     { "type": "text"  }, <4>
-      "age":      { "type": "integer" },  <5>
+    "properties": {
+      "title":    { "type": "text"  },
+      "name":     { "type": "text"  },
+      "age":      { "type": "integer" },
       "created":  {
-        "type":   "date", <6>
+        "type":   "date",
         "format": "strict_date_optional_time||epoch_millis"
       }
     }
@@ -155,13 +147,117 @@ PUT my_index <1>
 }
 ---------------------------------------
 // CONSOLE
-<1> Create an index called `my_index`.
-<2> Specify the fields or _properties_ in the mapping.
-<3> Specify that the `title` field contains `text` values.
-<4> Specify that the `name` field contains `text` values.
-<5> Specify that the `age` field contains `integer` values.
-<6> Specify that the `created` field contains `date` values in two possible formats.
+// TESTSETUP
 
+[float]
+[[view-mapping]]
+== View a mapping
+
+You can use the <<indices-get-mapping, get mapping>> API to view the mapping of
+an existing index.
+
+[source,js]
+---------------------------------------
+GET /my-index/_mapping
+---------------------------------------
+// CONSOLE
+
+The API returns the following response:
+
+[source,js]
+---------------------------------------
+{
+  "my-index" : {
+    "mappings" : {
+      "properties" : {
+        "age" : {
+          "type" : "integer"
+        },
+        "created" : {
+          "type" : "date"
+        },
+        "name" : {
+          "type" : "text"
+        },
+        "title" : {
+          "type" : "text"
+        }
+      }
+    }
+  }
+}
+---------------------------------------
+// TESTRESPONSE
+
+
+[float]
+[[view-field-mapping]]
+== View the mapping of specific fields
+
+If you only want to view the mapping of one or more specific fields, you can use
+the <<indices-get-field-mapping, get field mapping>> API.
+
+This is useful if you don't need the complete mapping of an index or your index
+contains a large number of fields.
+
+[source,js]
+--------------------------------------------------
+GET /my-index/_mapping/field/title
+--------------------------------------------------
+// CONSOLE
+
+The API returns the following response:
+
+[source,js]
+---------------------------------------
+{
+  "my-index" : {
+    "mappings" : {
+      "title" : {
+        "full_name" : "title",
+        "mapping" : {
+          "title" : {
+            "type" : "text"
+          }
+        }
+      }
+    }
+  }
+}
+---------------------------------------
+// TESTRESPONSE
+
+[float]
+[[update-field-mappings]]
+== Update existing field mappings
+
+Although you can add new fields to an existing mapping, you can’t change the
+mapping of an existing field. If a mapping already exists for a field, data may
+already be indexed in that field. If you change that field's mapping, the
+indexed data would be wrong and would not be properly searchable.
+
+If you only want to rename a field, consider creating a <<alias, field alias>>.
+
+If you need to change the mapping of a field, create a new index with the
+correct mappings and <<docs-reindex,reindex>> your data into that index.
+
+
+[float]
+[[add-field-mapping]]
+== Add a new field to an existing mapping
+
+[source,js]
+--------------------------------------------------
+PUT /my-index/_mapping
+{
+  "properties": {
+    "email": {
+      "type": "keyword"
+    }
+  }
+}
+--------------------------------------------------
+// CONSOLE
 --
 
 include::mapping/removal_of_types.asciidoc[]
